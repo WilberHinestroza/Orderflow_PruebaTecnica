@@ -91,6 +91,13 @@ services:
       inventory-worker:
         condition: service_healthy
 
+  # Tests del backend en contenedor (no se levanta con "up"): docker compose --profile test run --rm tests
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: tests/OrderFlow.Tests/Dockerfile
+
 volumes:
   pgdata:
   rabbitdata:

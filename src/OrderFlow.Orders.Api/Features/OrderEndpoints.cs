@@ -33,7 +33,7 @@ public static class OrderEndpoints
             {
                 var result = await handler.HandleAsync(request, ct);
                 return result.IsValid
-                    ? Results.Created($"/orders/{result.Order!.Id}", OrderResponse.From(result.Order))
+                    ? Results.Created($"/orders/{result.Order!.Id}", OrderResponse.From(result.Order!))
                     : Results.ValidationProblem(result.Errors!, title: "Los datos del pedido no son válidos.");
             })
             .Produces<OrderResponse>(StatusCodes.Status201Created)
