@@ -1,0 +1,7 @@
+# kubectl apply -k k8s/   (después de crear el namespace y el Secret real)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - orders-api.yaml
+  - inventory-worker.yaml

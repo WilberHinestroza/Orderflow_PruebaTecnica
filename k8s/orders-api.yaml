@@ -1,0 +1,85 @@
+# Orders API en Kubernetes: ConfigMap (config no sensible) + Deployment + Service.
+# Las credenciales vienen del Secret "orderflow-secrets" (ver secrets.example.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-api-config
+  namespace: orderflow
+data:
+  RabbitMq__Host: rabbitmq.orderflow.svc.cluster.local
+  RabbitMq__Port: "5672"
+  Outbox__PollingIntervalMs: "1000"
+  Features__DemoEndpoints: "false"   # en un entorno real, apagado
+  ASPNETCORE_ENVIRONMENT: Production
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  namespace: orderflow
+  labels: { app: orders-api }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: orders-api }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }   # despliegue sin caída
+  template:
+    metadata:
+      labels: { app: orders-api }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: orders-api
+          image: ghcr.io/REEMPLAZAR/orderflow-orders-api:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef: { name: orders-api-config }
+          env:
+            - name: ConnectionStrings__OrdersDb
+              valueFrom: { secretKeyRef: { name: orderflow-secrets, key: orders-db-connection } }
+            - name: RabbitMq__Username
+              valueFrom: { secretKeyRef: { name: orderflow-secrets, key: rabbitmq-username } }
+            - name: RabbitMq__Password
+              valueFrom: { secretKeyRef: { name: orderflow-secrets, key: rabbitmq-password } }
+          # Liveness: ¿el proceso está vivo? No consulta dependencias, para no reiniciar pods
+          # por culpa de una BD caída (eso no se arregla reiniciando).
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          # Readiness: ¿puede atender tráfico? Requiere BD. No requiere RabbitMQ (el outbox tolera su caída).
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  namespace: orderflow
+spec:
+  selector: { app: orders-api }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

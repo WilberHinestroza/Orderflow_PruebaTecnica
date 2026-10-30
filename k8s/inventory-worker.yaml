@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventory-worker-config
+  namespace: orderflow
+data:
+  RabbitMq__Host: rabbitmq.orderflow.svc.cluster.local
+  RabbitMq__Port: "5672"
+  RabbitMq__PrefetchCount: "10"
+  ASPNETCORE_ENVIRONMENT: Production
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-worker
+  namespace: orderflow
+  labels: { app: inventory-worker }
+spec:
+  # Escala horizontalmente sin riesgo: RabbitMQ reparte los mensajes entre réplicas (competing consumers)
+  # y el UPDATE atómico + la PK de processed_events evitan dobles descuentos aun en paralelo.
+  replicas: 2
+  selector:
+    matchLabels: { app: inventory-worker }
+  template:
+    metadata:
+      labels: { app: inventory-worker }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: inventory-worker
+          image: ghcr.io/REEMPLAZAR/orderflow-inventory-worker:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef: { name: inventory-worker-config }
+          env:
+            - name: ConnectionStrings__InventoryDb
+              valueFrom: { secretKeyRef: { name: orderflow-secrets, key: inventory-db-connection } }
+            - name: RabbitMq__Username
+              valueFrom: { secretKeyRef: { name: orderflow-secrets, key: rabbitmq-username } }
+            - name: RabbitMq__Password
+              valueFrom: { secretKeyRef: { name: orderflow-secrets, key: rabbitmq-password } }
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-worker
+  namespace: orderflow
+spec:
+  selector: { app: inventory-worker }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
