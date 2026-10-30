@@ -7,7 +7,4 @@
   <ItemGroup>
     <ProjectReference Include="..\OrderFlow.BuildingBlocks\OrderFlow.BuildingBlocks.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <InternalsVisibleTo Include="OrderFlow.Tests" />
-  </ItemGroup>
 </Project>
