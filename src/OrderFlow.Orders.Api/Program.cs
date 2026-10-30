@@ -26,7 +26,10 @@ builder.Services.AddScoped<CreateOrderHandler>();
 builder.Services.AddScoped<StockResultHandler>();
 
 builder.Services.AddProblemDetails();
+// Los enums viajan como texto ("Confirmed"), no como número. Se configura en los dos sitios:
+// HttpJsonOptions lo usa la Minimal API al responder; Mvc.JsonOptions lo lee Swagger para documentar.
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
