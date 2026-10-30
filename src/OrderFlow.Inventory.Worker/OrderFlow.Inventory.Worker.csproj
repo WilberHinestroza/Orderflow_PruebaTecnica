@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    Es un worker (su trabajo principal es consumir eventos), pero usa el SDK Web para exponer
+    /health/live, /health/ready (probes de Kubernetes y compose) y GET /stock (para el panel).
+  -->
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OrderFlow.BuildingBlocks\OrderFlow.BuildingBlocks.csproj" />
+  </ItemGroup>
+</Project>
