@@ -1,0 +1,28 @@
+# La imagen oficial de nginx sustituye ${VARIABLES} de entorno al arrancar (envsubst sobre /etc/nginx/templates).
+# Así las URLs de los backends se configuran por entorno, igual que en el resto del sistema.
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+
+    # /api/orders -> ${ORDERS_API_URL}/orders  (la barra final quita el prefijo /api)
+    location /api/ {
+        proxy_pass ${ORDERS_API_URL}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /inventory/ {
+        proxy_pass ${INVENTORY_URL}/;
+        proxy_set_header Host $host;
+    }
+
+    location = /healthz {
+        access_log off;
+        return 200 'ok';
+    }
+
+    # SPA: cualquier otra ruta devuelve index.html
+    location / {
+        try_files $uri /index.html;
+    }
+}

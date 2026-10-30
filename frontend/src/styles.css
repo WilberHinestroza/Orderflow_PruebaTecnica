@@ -1,0 +1,78 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1c2330;
+  --muted: #687385;
+  --border: #dde2e9;
+  --primary: #e8590c;
+  --primary-hover: #c94a08;
+  --danger: #c92a2a;
+  --danger-bg: #fff0f0;
+  --success: #2b8a3e;
+  --success-bg: #ebfbee;
+  --info-bg: #e7f5ff;
+  --info: #1864ab;
+  --pending: #b7791f;
+  --pending-bg: #fff8e6;
+  --radius: 8px;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1, h2 { margin: 0; }
+h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.85em; }
+
+.app { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.topbar h1 { font-size: 1.4rem; color: var(--primary); }
+
+.tabs { display: flex; gap: 0.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.25rem; }
+.tabs button { background: none; color: var(--muted); border: 0; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font: inherit; }
+.tabs button[aria-selected='true'] { background: var(--primary); color: #fff; }
+
+.layout { display: grid; grid-template-columns: 1fr 240px; gap: 1rem; align-items: start; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; min-width: 0; }
+.card-header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+
+.form { max-width: 480px; }
+.field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+.field label { font-weight: 600; font-size: 0.9rem; }
+.field input, .field select { font: inherit; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+.field input:focus, .field select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.field-invalid input, .field-invalid select { border-color: var(--danger); }
+.field-error { margin: 0; color: var(--danger); font-size: 0.85rem; }
+
+button[type='submit'] { background: var(--primary); color: #fff; border: 0; border-radius: 6px; padding: 0.65rem 1.2rem; font: inherit; font-weight: 600; cursor: pointer; }
+button[type='submit']:hover:not(:disabled) { background: var(--primary-hover); }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+button.link { background: none; border: 0; color: var(--info); cursor: pointer; font: inherit; font-size: 0.8rem; padding: 0; white-space: nowrap; }
+button.link:hover:not(:disabled) { text-decoration: underline; }
+
+.alert { padding: 0.7rem 0.9rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+.alert-error { background: var(--danger-bg); color: var(--danger); }
+.alert-success { background: var(--success-bg); color: var(--success); }
+.alert-info { background: var(--info-bg); color: var(--info); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+.num { text-align: right; }
+
+.badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+.badge-pending { background: var(--pending-bg); color: var(--pending); }
+.badge-confirmed { background: var(--success-bg); color: var(--success); }
+.badge-rejected { background: var(--danger-bg); color: var(--danger); }
+
+.stock-list { list-style: none; margin: 0; padding: 0; }
+.stock-list li { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+.stock-list span { font-weight: 600; font-variant-numeric: tabular-nums; }
+.stock-out { color: var(--danger); }
