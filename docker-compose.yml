@@ -1,0 +1,96 @@
+# docker compose up --build   → levanta todo: BD, broker, 2 servicios y el panel.
+# Las credenciales tienen valores por defecto SOLO para desarrollo local; se sobreescriben con un archivo .env
+# (ver .env.example). Ningún valor está escrito en el código de los servicios.
+name: orderflow
+
+x-dotnet-healthcheck: &dotnet-healthcheck
+  test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/ready > /dev/null || exit 1"]
+  interval: 5s
+  timeout: 3s
+  retries: 20
+  start_period: 10s
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-orderflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orderflow}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-orderflow}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-orderflow}
+    ports:
+      - "15672:15672"   # consola de administración: http://localhost:15672
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  orders-api:
+    build:
+      context: .
+      dockerfile: src/OrderFlow.Orders.Api/Dockerfile
+    environment:
+      ConnectionStrings__OrdersDb: "Host=postgres;Port=5432;Database=orders;Username=${POSTGRES_USER:-orderflow};Password=${POSTGRES_PASSWORD:-orderflow}"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-orderflow}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-orderflow}
+      Features__DemoEndpoints: "${DEMO_ENDPOINTS:-true}"
+    ports:
+      - "5080:8080"     # Swagger: http://localhost:5080/swagger
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck: *dotnet-healthcheck
+    restart: unless-stopped
+
+  inventory-worker:
+    build:
+      context: .
+      dockerfile: src/OrderFlow.Inventory.Worker/Dockerfile
+    environment:
+      ConnectionStrings__InventoryDb: "Host=postgres;Port=5432;Database=inventory;Username=${POSTGRES_USER:-orderflow};Password=${POSTGRES_PASSWORD:-orderflow}"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: ${RABBITMQ_USER:-orderflow}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:-orderflow}
+    ports:
+      - "5081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck: *dotnet-healthcheck
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    environment:
+      ORDERS_API_URL: http://orders-api:8080
+      INVENTORY_URL: http://inventory-worker:8080
+    ports:
+      - "8080:8080"     # Panel: http://localhost:8080
+    depends_on:
+      orders-api:
+        condition: service_healthy
+      inventory-worker:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  rabbitdata:
