@@ -152,6 +152,8 @@ No necesita tabla extra. La máquina de estados (`Order.Confirm` / `Order.Reject
 
 Una sola instancia de Postgres en compose, pero con dos bases separadas (`orders` e `inventory`), cada una propiedad de su servicio. Ningún servicio lee la base del otro.
 
+**Por qué PostgreSQL y no SQLite o memoria:** la idempotencia y el descuento de stock dependen de garantías de la base de datos (transacciones, llave primaria en `processed_events`, `UPDATE` condicional atómico y `CHECK`), y con dos servicios concurrentes eso necesita un motor real compartible por red. Además los pedidos y el stock persisten entre reinicios gracias al volumen de Docker. SQLite se usa solo en los tests, donde basta un proceso.
+
 El esquema se crea con `EnsureCreated` al arrancar, con reintentos mientras la base de datos levanta, y el seed es idempotente.
 
 ### Catálogo duplicado en Orders
