@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Piezas compartidas por ambos servicios: contratos de eventos, conexión a RabbitMQ,
+    consumidor base y patrón Outbox. En un sistema real esto sería un paquete NuGet interno versionado.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+</Project>

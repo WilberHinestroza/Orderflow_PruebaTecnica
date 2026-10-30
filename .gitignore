@@ -1,0 +1,17 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Entorno local
+.env
+.idea/
+.vscode/
+*.log
